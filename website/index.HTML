@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32S Dashboard with Fish Animation</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* 全局樣式 */
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #1e90ff, #ffffff);
+      color: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden; /* 隱藏超出範圍的元素 */
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 3em;
+      margin: 20px;
+      color: #1e3a5f;
+      text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+      z-index: 10; /* 保证文字层级高 */
+    }
+
+    /* 卡片樣式 */
+    .card {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 300px;
+      margin: 15px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      z-index: 10; /* 保证卡片层级高 */
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-icon {
+      font-size: 3em;
+      margin-bottom: 10px;
+      color: #1e3a5f;
+    }
+
+    .card-value {
+      font-size: 2em;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .warning {
+      color: #d32f2f;
+    }
+
+    /* 刷新按鈕 */
+    .refresh-btn {
+      background-color: #1e3a5f;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 1.2em;
+      cursor: pointer;
+      margin-top: 30px;
+      transition: background-color 0.3s ease;
+      z-index: 10;
+    }
+
+    .refresh-btn:hover {
+      background-color: #003366;
+    }
+
+    /* 魚動畫樣式 */
+    .fish {
+      position: absolute;
+      width: 80px;
+      z-index: 1; /* 確保魚在文字和卡片下方 */
+      animation: none; /* 初始化不播放動畫 */
+    }
+
+    #fish-container {
+      position: absolute;
+      width: 100%;
+      height: calc(100% - 150px); /* 確保魚不會移動到文字區域 */
+      top: 150px;
+      left: 0;
+      pointer-events: none; /* 防止鼠標影響 */
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>ESP32S Dashboard</h1>
+  <div class="card">
+    <div class="card-icon"><i class="fas fa-water"></i></div>
+    <div class="card-title">Water Level</div>
+    <div class="card-value" id="water-level">-</div>
+  </div>
+
+  <div class="card">
+    <div class="card-icon"><i class="fas fa-thermometer-half"></i></div>
+    <div class="card-title">Temperature</div>
+    <div class="card-value" id="temperature">-</div>
+  </div>
+
+  <div class="card">
+    <div class="card-icon"><i class="fas fa-cloud"></i></div>
+    <div class="card-title">Humidity</div>
+    <div class="card-value" id="humidity">-</div>
+  </div>
+
+  <button class="refresh-btn" onclick="refreshData()">Refresh Data</button>
+
+  <!-- 魚圖片容器 -->
+  <div id="fish-container"></div>
+
+  <script>
+    // 魚動畫
+    function createFish() {
+      const fish = document.createElement('img');
+      fish.src = 'fish.png';
+      fish.className = 'fish';
+      document.getElementById('fish-container').appendChild(fish);
+      return fish;
+    }
+
+    function animateFish(fish, duration) {
+      const startX = -fish.offsetWidth;
+      const endX = window.innerWidth;
+      const randomY = Math.random() * document.getElementById('fish-container').offsetHeight; // 隨機 Y 軸位置
+
+      fish.style.left = startX + 'px';
+      fish.style.top = randomY + 'px';
+      fish.style.transition = `left ${duration}s linear, top ${duration}s linear`;
+
+      // 延遲設定目標位置，觸發平滑移動
+      setTimeout(() => {
+        fish.style.left = endX + 'px';
+      }, 100);
+
+      // 當魚到達終點時，重新開始動畫
+      fish.addEventListener('transitionend', () => {
+        fish.remove();
+        setTimeout(() => {
+          const newFish = createFish();
+          animateFish(newFish, Math.random() * 5 + 5);
+        }, Math.random() * 3000);
+      }, { once: true });
+    }
+
+    function startFishAnimation() {
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          const fish = createFish();
+          animateFish(fish, Math.random() * 5 + 5);
+        }, Math.random() * 5000);
+      }
+    }
+
+    window.addEventListener('load', startFishAnimation);
+
+    // 獲取數據並更新界面
+    function refreshData() {
+      const data = {
+        waterLevel: Math.floor(Math.random() * 100),
+        temperature: (Math.random() * 35).toFixed(1),
+        humidity: Math.floor(Math.random() * 100),
+      };
+
+      document.getElementById('water-level').textContent = `${data.waterLevel}%`;
+      document.getElementById('temperature').textContent = `${data.temperature}°C`;
+      document.getElementById('humidity').textContent = `${data.humidity}%`;
+
+      if (data.waterLevel > 80) {
+        document.getElementById('water-level').classList.add('warning');
+      } else {
+        document.getElementById('water-level').classList.remove('warning');
+      }
+    }
+
+    // 自動刷新數據（每 10 秒）
+    setInterval(refreshData, 10000);
+  </script>
+</body>
+</html>
