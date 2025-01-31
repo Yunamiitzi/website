@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "/Users/public",  // 設定 public 資料夾為靜態檔案來源
+    "public": "public",  // 設定 public 資料夾為靜態檔案來源
     "ignore": [
       "firebase.json",
       "**/.*",
